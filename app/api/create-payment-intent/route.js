@@ -20,7 +20,6 @@ export async function POST(request) {
       price: item.price
     }))
     
-    // 1. Define the base payment intent options
     const paymentIntentOptions = {
       amount: amount,
       currency: 'usd',
@@ -33,18 +32,16 @@ export async function POST(request) {
         tax: tax.toFixed(2),
         shipping: shipping.toFixed(2),
         total: total.toFixed(2),
-        customer_email: customerInfo?.email || '', // Metadata is tolerant of empty strings
+        customer_email: customerInfo?.email || '', 
         order_date: new Date().toISOString()
       },
       description: `Order for ${items.length} items`
     }
 
-    // 2. Conditionally add receipt_email ONLY if it exists and is valid
     if (customerInfo?.email) {
       paymentIntentOptions.receipt_email = customerInfo.email
     }
 
-    // 3. Create the intent with the constructed options
     const paymentIntent = await stripe.paymentIntents.create(paymentIntentOptions)
 
     return NextResponse.json({

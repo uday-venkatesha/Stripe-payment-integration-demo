@@ -22,12 +22,10 @@ export default function CheckoutForm({ amount, items }) {
     setIsProcessing(true)
     setMessage('')
 
-    // Build confirmParams - only include receipt_email if we have a valid email
     const confirmParams = {
       return_url: `${window.location.origin}/success`,
     }
     
-    // Only add receipt_email if the email is valid and non-empty
     if (email && email.trim().length > 0) {
       confirmParams.receipt_email = email.trim()
     }
