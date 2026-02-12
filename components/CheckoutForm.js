@@ -1,91 +1,61 @@
-/**
- * CHECKOUT FORM COMPONENT
- * 
- * This is where users enter their card details.
- * 
- * IMPORTANT SECURITY NOTE:
- * We're using Stripe Elements - these are secure input fields that Stripe provides.
- * Card data NEVER touches your server. It goes directly from the user's browser
- * to Stripe's servers. This is called "PCI compliance" and it's required by law.
- * 
- * HOW IT WORKS:
- * 1. Component loads
- * 2. Shows Stripe's secure card input fields
- * 3. User fills in card details
- * 4. User clicks "Pay"
- * 5. Stripe processes the payment
- * 6. We redirect to success page
- * 
- * This is a CLIENT component (runs in the browser, not on the server)
- * That's why we have 'use client' at the top
- */
-
 'use client'
 
 import { useState } from 'react'
-import { useStripe, useElements, PaymentElement } from '@stripe/react-stripe-js'
+import { useStripe, useElements, PaymentElement, LinkAuthenticationElement } from '@stripe/react-stripe-js'
 
-export default function CheckoutForm({ amount }) {
-  // Stripe hooks - these give us access to Stripe functionality
-  const stripe = useStripe()  // Main Stripe object
-  const elements = useElements()  // Payment form elements
+export default function CheckoutForm({ amount, items }) {
+  const stripe = useStripe()
+  const elements = useElements()
   
-  // State to track what's happening
-  const [isProcessing, setIsProcessing] = useState(false)  // Is payment being processed?
-  const [message, setMessage] = useState('')  // Error or success messages
+  const [email, setEmail] = useState('')
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [message, setMessage] = useState('')
 
-  // This function runs when user clicks "Pay Now"
   const handleSubmit = async (event) => {
-    // Prevent the form from reloading the page
     event.preventDefault()
 
-    // Make sure Stripe has loaded
     if (!stripe || !elements) {
       setMessage('Stripe has not loaded yet. Please wait.')
       return
     }
 
-    // Show loading state
     setIsProcessing(true)
     setMessage('')
 
-    // Confirm the payment with Stripe
-    // This sends the card data to Stripe and processes the payment
     const { error } = await stripe.confirmPayment({
-      elements,  // The payment form elements
+      elements,
       confirmParams: {
-        // Where to redirect after successful payment
         return_url: `${window.location.origin}/success`,
+        receipt_email: email,
       },
     })
 
-    // If there's an error, show it to the user
     if (error) {
       setMessage(error.message)
       setIsProcessing(false)
-    } else {
-      // Success! Stripe will redirect to the success page
-      // We don't need to do anything here
     }
   }
 
   return (
     <form onSubmit={handleSubmit} style={styles.form}>
-      {/* 
-        PaymentElement - This is Stripe's magic component
-        It shows the card input fields, Apple Pay, Google Pay, etc.
-        All secure and PCI compliant!
-      */}
-      <PaymentElement />
+      <div style={styles.section}>
+        <h3 style={styles.sectionTitle}>Contact Information</h3>
+        <LinkAuthenticationElement
+          onChange={(e) => setEmail(e.value.email)}
+        />
+      </div>
 
-      {/* Show error messages if any */}
+      <div style={styles.section}>
+        <h3 style={styles.sectionTitle}>Payment Details</h3>
+        <PaymentElement />
+      </div>
+
       {message && (
         <div style={styles.error}>
           {message}
         </div>
       )}
 
-      {/* Submit button */}
       <button 
         type="submit" 
         disabled={!stripe || isProcessing}
@@ -97,32 +67,39 @@ export default function CheckoutForm({ amount }) {
         {isProcessing ? 'Processing...' : `Pay $${(amount / 100).toFixed(2)}`}
       </button>
 
-      {/* Test card info reminder */}
-      <div style={styles.testInfo}>
-        <p style={styles.testTitle}>Test Card Numbers:</p>
-        <p style={styles.testCard}>✓ Success: 4242 4242 4242 4242</p>
-        <p style={styles.testCard}>✗ Decline: 4000 0000 0000 0002</p>
-        <p style={styles.testSmall}>Use any future date, any CVC, any ZIP</p>
+      <div style={styles.secure}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" strokeWidth="2"/>
+          <path d="M7 11V7a5 5 0 0110 0v4" strokeWidth="2"/>
+        </svg>
+        <span style={styles.secureText}>Secured by Stripe</span>
       </div>
     </form>
   )
 }
 
-// Styles for this component
 const styles = {
   form: {
     maxWidth: '500px',
-    margin: '0 auto',
+  },
+  section: {
+    marginBottom: '1.5rem',
+  },
+  sectionTitle: {
+    fontSize: '1rem',
+    fontWeight: '600',
+    marginBottom: '0.75rem',
+    color: '#1a1a1a',
   },
   button: {
     width: '100%',
-    padding: '16px',
-    marginTop: '20px',
+    padding: '1rem',
+    marginTop: '1rem',
     backgroundColor: '#635BFF',
     color: 'white',
     border: 'none',
     borderRadius: '8px',
-    fontSize: '18px',
+    fontSize: '1rem',
     fontWeight: '600',
     cursor: 'pointer',
     transition: 'background-color 0.2s',
@@ -132,33 +109,22 @@ const styles = {
     cursor: 'not-allowed',
   },
   error: {
-    marginTop: '15px',
-    padding: '12px',
+    marginTop: '1rem',
+    padding: '0.75rem',
     backgroundColor: '#FEE',
     color: '#C33',
     borderRadius: '6px',
-    fontSize: '14px',
+    fontSize: '0.875rem',
   },
-  testInfo: {
-    marginTop: '30px',
-    padding: '15px',
-    backgroundColor: '#F7F7F7',
-    borderRadius: '8px',
-    fontSize: '14px',
+  secure: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '0.5rem',
+    marginTop: '1rem',
   },
-  testTitle: {
-    fontWeight: 'bold',
-    marginBottom: '8px',
-    color: '#333',
-  },
-  testCard: {
-    margin: '4px 0',
+  secureText: {
+    fontSize: '0.75rem',
     color: '#666',
-    fontFamily: 'monospace',
-  },
-  testSmall: {
-    marginTop: '8px',
-    fontSize: '12px',
-    color: '#999',
   }
 }

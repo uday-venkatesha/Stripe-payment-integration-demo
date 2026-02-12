@@ -1,43 +1,32 @@
-/**
- * SUCCESS PAGE
- * 
- * Users land here after a successful payment.
- * 
- * Stripe automatically redirects here (we configured it in CheckoutForm.js)
- * and adds a "payment_intent" parameter to the URL so we can verify the payment.
- * 
- * In a real app, you would:
- * 1. Verify the payment with Stripe
- * 2. Create an order in your database
- * 3. Send confirmation email
- * 4. Show order details
- */
-
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
+import Header from '../../components/Header'
+import { useCartStore } from '../../store/cartStore'
 
 export default function SuccessPage() {
   const searchParams = useSearchParams()
-  const [status, setStatus] = useState('loading')
+  const router = useRouter()
+  const clearCart = useCartStore((state) => state.clearCart)
   
-  // Get payment intent ID from URL
+  const [status, setStatus] = useState('loading')
   const paymentIntent = searchParams.get('payment_intent')
 
   useEffect(() => {
-    // In a real app, you'd verify the payment status here
-    // For this demo, we'll just mark it as successful
     if (paymentIntent) {
       setStatus('success')
+      clearCart()
     } else {
       setStatus('error')
     }
-  }, [paymentIntent])
+  }, [paymentIntent, clearCart])
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
+    <div style={styles.page}>
+      <Header />
+      
+      <main style={styles.main}>
         {status === 'loading' && (
           <div style={styles.loading}>
             <div style={styles.spinner}></div>
@@ -47,7 +36,6 @@ export default function SuccessPage() {
 
         {status === 'success' && (
           <div style={styles.success}>
-            {/* Success checkmark */}
             <div style={styles.checkmark}>
               <svg width="80" height="80" viewBox="0 0 80 80">
                 <circle cx="40" cy="40" r="38" fill="#4CAF50" />
@@ -61,43 +49,39 @@ export default function SuccessPage() {
               </svg>
             </div>
 
-            <h1 style={styles.title}>Payment Successful!</h1>
+            <h1 style={styles.title}>Order Confirmed!</h1>
             
             <p style={styles.message}>
-              Thank you for your purchase. Your order has been confirmed.
+              Thank you for your purchase. Your order has been successfully processed.
             </p>
 
-            {/* Order details box */}
             <div style={styles.details}>
-              <h2 style={styles.detailsTitle}>Order Details</h2>
-              <div style={styles.detailRow}>
-                <span style={styles.detailLabel}>Product:</span>
-                <span style={styles.detailValue}>Premium Wireless Headphones</span>
+              <h2 style={styles.detailsTitle}>What's Next?</h2>
+              <ul style={styles.list}>
+                <li style={styles.listItem}>You'll receive an order confirmation email shortly</li>
+                <li style={styles.listItem}>We'll send you tracking information once your order ships</li>
+                <li style={styles.listItem}>Estimated delivery: 3-5 business days</li>
+              </ul>
+            </div>
+
+            <div style={styles.orderInfo}>
+              <div style={styles.infoRow}>
+                <span style={styles.infoLabel}>Order Number:</span>
+                <span style={styles.infoValue}>{paymentIntent}</span>
               </div>
-              <div style={styles.detailRow}>
-                <span style={styles.detailLabel}>Amount Paid:</span>
-                <span style={styles.detailValue}>$49.99</span>
-              </div>
-              <div style={styles.detailRow}>
-                <span style={styles.detailLabel}>Payment ID:</span>
-                <span style={styles.detailValueSmall}>{paymentIntent}</span>
+              <div style={styles.infoRow}>
+                <span style={styles.infoLabel}>Date:</span>
+                <span style={styles.infoValue}>{new Date().toLocaleDateString()}</span>
               </div>
             </div>
 
-            {/* Info box */}
-            <div style={styles.info}>
-              <p style={styles.infoTitle}>📧 Confirmation Email</p>
-              <p style={styles.infoText}>
-                A confirmation email has been sent to your email address.
-                (This is a demo - no actual email was sent)
-              </p>
-            </div>
-
-            {/* Action buttons */}
             <div style={styles.actions}>
-              <a href="/" style={styles.primaryButton}>
-                Back to Home
-              </a>
+              <button 
+                onClick={() => router.push('/')} 
+                style={styles.primaryButton}
+              >
+                Continue Shopping
+              </button>
               <a 
                 href={`https://dashboard.stripe.com/test/payments/${paymentIntent}`}
                 target="_blank"
@@ -114,152 +98,148 @@ export default function SuccessPage() {
           <div style={styles.error}>
             <h1 style={styles.title}>Something went wrong</h1>
             <p style={styles.message}>
-              We couldn't verify your payment. Please contact support.
+              We couldn't verify your payment. Please contact support if you were charged.
             </p>
-            <a href="/" style={styles.primaryButton}>
-              Back to Home
-            </a>
+            <button 
+              onClick={() => router.push('/')} 
+              style={styles.primaryButton}
+            >
+              Return to Home
+            </button>
           </div>
         )}
-      </div>
+      </main>
     </div>
   )
 }
 
-// Styles
 const styles = {
-  container: {
+  page: {
     minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '20px',
-    backgroundColor: '#f7f7f7',
+    backgroundColor: '#f5f5f5',
   },
-  card: {
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-    maxWidth: '600px',
-    width: '100%',
-    padding: '40px',
+  main: {
+    maxWidth: '800px',
+    margin: '0 auto',
+    padding: '2rem',
   },
   loading: {
     textAlign: 'center',
-    padding: '40px',
+    padding: '4rem 2rem',
   },
   spinner: {
     width: '40px',
     height: '40px',
-    margin: '0 auto 20px',
+    margin: '0 auto 1rem',
     border: '4px solid #f3f3f3',
     borderTop: '4px solid #635BFF',
     borderRadius: '50%',
     animation: 'spin 1s linear infinite',
   },
   success: {
+    backgroundColor: 'white',
+    borderRadius: '8px',
+    padding: '3rem',
     textAlign: 'center',
   },
   checkmark: {
-    marginBottom: '20px',
+    marginBottom: '1.5rem',
     display: 'flex',
     justifyContent: 'center',
   },
   title: {
-    fontSize: '28px',
+    fontSize: '2rem',
     fontWeight: 'bold',
-    marginBottom: '10px',
+    marginBottom: '0.75rem',
     color: '#1a1a1a',
   },
   message: {
-    fontSize: '16px',
+    fontSize: '1.125rem',
     color: '#666',
-    marginBottom: '30px',
+    marginBottom: '2rem',
+    lineHeight: '1.6',
   },
   details: {
     backgroundColor: '#f9f9f9',
-    padding: '20px',
+    padding: '1.5rem',
     borderRadius: '8px',
-    marginBottom: '20px',
+    marginBottom: '2rem',
     textAlign: 'left',
   },
   detailsTitle: {
-    fontSize: '18px',
+    fontSize: '1.125rem',
     fontWeight: 'bold',
-    marginBottom: '15px',
-    color: '#333',
+    marginBottom: '1rem',
+    color: '#1a1a1a',
   },
-  detailRow: {
+  list: {
+    listStyle: 'none',
+    padding: 0,
+    margin: 0,
+  },
+  listItem: {
+    padding: '0.5rem 0',
+    paddingLeft: '1.5rem',
+    position: 'relative',
+    color: '#666',
+    fontSize: '0.95rem',
+  },
+  orderInfo: {
+    backgroundColor: '#f9f9f9',
+    padding: '1.5rem',
+    borderRadius: '8px',
+    marginBottom: '2rem',
+    textAlign: 'left',
+  },
+  infoRow: {
     display: 'flex',
     justifyContent: 'space-between',
-    marginBottom: '10px',
-    alignItems: 'center',
+    marginBottom: '0.75rem',
   },
-  detailLabel: {
-    fontSize: '14px',
+  infoLabel: {
+    fontSize: '0.95rem',
     color: '#666',
+    fontWeight: '500',
   },
-  detailValue: {
-    fontSize: '14px',
-    fontWeight: '600',
-    color: '#333',
-  },
-  detailValueSmall: {
-    fontSize: '12px',
+  infoValue: {
+    fontSize: '0.95rem',
+    color: '#1a1a1a',
     fontFamily: 'monospace',
-    color: '#666',
-    maxWidth: '200px',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-  },
-  info: {
-    backgroundColor: '#E8F5E9',
-    padding: '15px',
-    borderRadius: '8px',
-    marginBottom: '25px',
-  },
-  infoTitle: {
-    fontSize: '14px',
-    fontWeight: 'bold',
-    marginBottom: '5px',
-    color: '#2E7D32',
-  },
-  infoText: {
-    fontSize: '13px',
-    color: '#555',
-    margin: 0,
   },
   actions: {
     display: 'flex',
-    gap: '10px',
+    gap: '1rem',
     flexDirection: 'column',
   },
   primaryButton: {
-    display: 'block',
-    padding: '14px',
+    padding: '1rem',
     backgroundColor: '#635BFF',
     color: 'white',
     textAlign: 'center',
     borderRadius: '8px',
-    fontSize: '16px',
+    fontSize: '1rem',
     fontWeight: '600',
     textDecoration: 'none',
     cursor: 'pointer',
+    border: 'none',
   },
   secondaryButton: {
-    display: 'block',
-    padding: '14px',
+    padding: '1rem',
     backgroundColor: 'white',
     color: '#635BFF',
     textAlign: 'center',
     borderRadius: '8px',
-    fontSize: '16px',
+    fontSize: '1rem',
     fontWeight: '600',
     textDecoration: 'none',
     cursor: 'pointer',
     border: '2px solid #635BFF',
+    display: 'block',
   },
   error: {
+    backgroundColor: 'white',
+    borderRadius: '8px',
+    padding: '3rem',
     textAlign: 'center',
   }
 }
