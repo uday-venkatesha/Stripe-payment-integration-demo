@@ -1,5 +1,5 @@
 'use client'
-
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Header from '../../components/Header'
 import { useCartStore } from '../../store/cartStore'
@@ -8,18 +8,23 @@ import { formatCurrency, calculateTax, calculateShipping, calculateTotal } from 
 export default function CartPage() {
   const router = useRouter()
   const { items, updateQuantity, removeItem, getTotal } = useCartStore()
+  const [mounted, setMounted] = useState(false)
   
-  const subtotal = getTotal()
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+  
+  const subtotal = mounted ? getTotal() : 0
   const tax = calculateTax(subtotal)
   const shipping = calculateShipping(subtotal)
   const total = calculateTotal(subtotal)
-  
+
   const handleCheckout = () => {
     if (items.length === 0) return
     router.push('/checkout')
   }
   
-  if (items.length === 0) {
+  if (!mounted || items.length === 0) {
     return (
       <div style={styles.page}>
         <Header />
